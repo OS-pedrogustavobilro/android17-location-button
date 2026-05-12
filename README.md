@@ -1,0 +1,1 @@
+Simple native Android app to test the new location button coming in Android 17; https://android-developers.googleblog.com/2026/03/location-privacy.html
