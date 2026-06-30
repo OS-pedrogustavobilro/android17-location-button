@@ -1,3 +1,37 @@
 <resources>
     <string name="app_name">Android17 Location Button</string>
+    <string name="open_demo">Open Location Button Demo</string>
+    <string name="demo_title">Location Button</string>
+    <string name="demo_description">Tap the button below to grant temporary precise location access.\n\nOn Android 17+ this uses a system-rendered secure button that cannot be spoofed. On older versions it falls back to a standard permission request.</string>
+    <string name="status_idle">Tap the button to grant location access</string>
+    <string name="status_granted">Precise location access granted</string>
+    <string name="status_denied">Location access was not granted</string>
+    <string name="status_error">Error: %s</string>
+    <string name="location_no_cache">No cached location available yet</string>
+
+    <!-- Playground screen -->
+    <string name="open_playground">Location Button Playground</string>
+    <string name="playground_preview_watermark">PREVIEW AREA</string>
+    <string name="section_position">POSITION</string>
+    <string name="section_text_shape">TEXT &amp; SHAPE</string>
+    <string name="section_colors">COLORS</string>
+    <string name="label_position">Position</string>
+    <string name="label_text_type">Text type</string>
+    <string name="label_padding">Padding: %d dp</string>
+    <string name="label_corner_radius">Corner radius: %d dp</string>
+    <string name="label_pressed_corner_radius">Pressed corner radius: %d dp</string>
+    <string name="label_stroke_width">Stroke width: %d dp</string>
+    <string name="label_bg_color">Background</string>
+    <string name="label_text_color">Text color</string>
+    <string name="label_icon_tint">Icon tint</string>
+    <string name="label_stroke_color">Stroke color</string>
+    <string name="hint_color">#AARRGGBB</string>
+    <string name="hint_coord_x">X (px)</string>
+    <string name="hint_coord_y">Y (px)</string>
+    <string name="btn_apply_position">Apply</string>
+    <string name="btn_apply_colors">Apply Colors</string>
+    <string name="error_invalid_color">Invalid color format</string>
+    <string name="toast_location_granted">Location access granted (session)</string>
+    <string name="toast_location_denied">Location access was not granted</string>
+    <string name="toast_error">Error: %s</string>
 </resources>

@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/playground_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".LocationButtonPlaygroundActivity">
+
+    <!-- Horizontal guideline splitting preview (top 45%) from controls (bottom 55%) -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/mid_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.45" />
+
+    <!-- Preview container: LocationButton added here at runtime -->
+    <FrameLayout
+        android:id="@+id/button_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="?attr/colorSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/section_divider">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:alpha="0.4"
+            android:padding="8dp"
+            android:text="@string/playground_preview_watermark"
+            android:textAppearance="?attr/textAppearanceLabelSmall" />
+
+    </FrameLayout>
+
+    <!-- Divider at the guideline position -->
+    <View
+        android:id="@+id/section_divider"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="?attr/colorOutline"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/mid_guideline" />
+
+    <!-- Scrollable controls panel -->
+    <ScrollView
+        android:id="@+id/controls_scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/section_divider">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- ══════════════ POSITION ══════════════ -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:letterSpacing="0.1"
+                android:text="@string/section_position"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorPrimary" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.35"
+                    android:text="@string/label_position"
+                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                <Spinner
+                    android:id="@+id/position_spinner"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.65" />
+
+            </LinearLayout>
+
+            <!-- Custom pixel-coordinate row (shown only when "Custom (px)" is selected) -->
+            <LinearLayout
+                android:id="@+id/custom_coords_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:text="@string/hint_coord_x"
+                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                <EditText
+                    android:id="@+id/x_coord_edit"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="0"
+                    android:imeOptions="actionNext"
+                    android:inputType="number" />
+
+                <View
+                    android:layout_width="16dp"
+                    android:layout_height="1dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:text="@string/hint_coord_y"
+                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                <EditText
+                    android:id="@+id/y_coord_edit"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="0"
+                    android:imeOptions="actionDone"
+                    android:inputType="number" />
+
+                <Button
+                    android:id="@+id/apply_position_button"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/btn_apply_position" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/padding_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                tools:text="Padding: 0 dp" />
+
+            <SeekBar
+                android:id="@+id/padding_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="8" />
+
+            <!-- Section divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginBottom="16dp"
+                android:layout_marginTop="16dp"
+                android:background="?attr/colorOutlineVariant" />
+
+            <!-- ══════════════ TEXT & SHAPE ══════════════ -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:letterSpacing="0.1"
+                android:text="@string/section_text_shape"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorPrimary" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.35"
+                    android:text="@string/label_text_type"
+                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                <Spinner
+                    android:id="@+id/text_type_spinner"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.65" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/corner_radius_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                tools:text="Corner radius: 0 dp" />
+
+            <SeekBar
+                android:id="@+id/corner_radius_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="50" />
+
+            <TextView
+                android:id="@+id/pressed_corner_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                tools:text="Pressed corner radius: 0 dp" />
+
+            <SeekBar
+                android:id="@+id/pressed_corner_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="50" />
+
+            <TextView
+                android:id="@+id/stroke_width_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                tools:text="Stroke width: 0 dp" />
+
+            <!-- max=3 matches the library's MAX_STROKE_WIDTH_DP constant -->
+            <SeekBar
+                android:id="@+id/stroke_width_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="3" />
+
+            <!-- Section divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginBottom="16dp"
+                android:layout_marginTop="16dp"
+                android:background="?attr/colorOutlineVariant" />
+
+            <!-- ══════════════ COLORS ══════════════ -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:letterSpacing="0.1"
+                android:text="@string/section_colors"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorPrimary" />
+
+            <!-- Background color -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_bg_color"
+                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                <View
+                    android:id="@+id/bg_color_preview"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="?attr/colorOutlineVariant" />
+
+                <EditText
+                    android:id="@+id/bg_color_edit"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="monospace"
+                    android:hint="@string/hint_color"
+                    android:imeOptions="actionNext"
+                    android:inputType="text"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <!-- Text color -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_text_color"
+                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                <View
+                    android:id="@+id/text_color_preview"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="?attr/colorOutlineVariant" />
+
+                <EditText
+                    android:id="@+id/text_color_edit"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="monospace"
+                    android:hint="@string/hint_color"
+                    android:imeOptions="actionNext"
+                    android:inputType="text"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <!-- Icon tint -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_icon_tint"
+                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                <View
+                    android:id="@+id/icon_tint_preview"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="?attr/colorOutlineVariant" />
+
+                <EditText
+                    android:id="@+id/icon_tint_edit"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="monospace"
+                    android:hint="@string/hint_color"
+                    android:imeOptions="actionNext"
+                    android:inputType="text"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <!-- Stroke color -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_stroke_color"
+                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                <View
+                    android:id="@+id/stroke_color_preview"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="?attr/colorOutlineVariant" />
+
+                <EditText
+                    android:id="@+id/stroke_color_edit"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="monospace"
+                    android:hint="@string/hint_color"
+                    android:imeOptions="actionDone"
+                    android:inputType="text"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/apply_colors_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="12dp"
+                android:text="@string/btn_apply_colors" />
+
+            <!-- Bottom breathing room -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="16dp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
