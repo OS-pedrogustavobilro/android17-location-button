@@ -4,11 +4,7 @@ plugins {
 
 android {
     namespace = "com.pedroid.android17locationbutton"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.pedroid.android17locationbutton"
