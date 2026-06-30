@@ -17,7 +17,9 @@
     <string name="section_colors">COLORS</string>
     <string name="label_position">Position</string>
     <string name="label_text_type">Text type</string>
-    <string name="label_padding">Padding: %d dp</string>
+    <string name="label_width_wrap">Width: WRAP_CONTENT</string>
+    <string name="label_width_dp">Width: %d dp</string>
+    <string name="label_margin">Margin: %d dp</string>
     <string name="label_corner_radius">Corner radius: %d dp</string>
     <string name="label_pressed_corner_radius">Pressed corner radius: %d dp</string>
     <string name="label_stroke_width">Stroke width: %d dp</string>

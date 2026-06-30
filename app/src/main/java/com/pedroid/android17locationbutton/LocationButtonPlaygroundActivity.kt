@@ -31,11 +31,13 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
     private lateinit var customCoordsRow: LinearLayout
     private lateinit var xCoordEdit: EditText
     private lateinit var yCoordEdit: EditText
-    private lateinit var paddingLabel: TextView
-    private lateinit var paddingSeekBar: SeekBar
+    private lateinit var marginLabel: TextView
+    private lateinit var marginSeekBar: SeekBar
 
     // Text & shape controls
     private lateinit var textTypeSpinner: Spinner
+    private lateinit var widthLabel: TextView
+    private lateinit var widthSeekBar: SeekBar
     private lateinit var cornerRadiusLabel: TextView
     private lateinit var cornerRadiusSeekBar: SeekBar
     private lateinit var pressedCornerLabel: TextView
@@ -69,12 +71,12 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
     )
 
     private val textTypes = listOf(
-        "Precise Location"            to LocationButton.TEXT_TYPE_PRECISE_LOCATION,
-        "Use Precise Location"        to LocationButton.TEXT_TYPE_USE_PRECISE_LOCATION,
-        "Share Precise Location"      to LocationButton.TEXT_TYPE_SHARE_PRECISE_LOCATION,
-        "Near My Precise Location"    to LocationButton.TEXT_TYPE_NEAR_MY_PRECISE_LOCATION,
-        "Near Your Precise Location"  to LocationButton.TEXT_TYPE_NEAR_YOUR_PRECISE_LOCATION,
-        "None"                        to LocationButton.TEXT_TYPE_NONE,
+        "Precise Location"           to LocationButton.TEXT_TYPE_PRECISE_LOCATION,
+        "Use Precise Location"       to LocationButton.TEXT_TYPE_USE_PRECISE_LOCATION,
+        "Share Precise Location"     to LocationButton.TEXT_TYPE_SHARE_PRECISE_LOCATION,
+        "Near My Precise Location"   to LocationButton.TEXT_TYPE_NEAR_MY_PRECISE_LOCATION,
+        "Near Your Precise Location" to LocationButton.TEXT_TYPE_NEAR_YOUR_PRECISE_LOCATION,
+        "None"                       to LocationButton.TEXT_TYPE_NONE,
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -103,9 +105,11 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
         customCoordsRow      = findViewById(R.id.custom_coords_row)
         xCoordEdit           = findViewById(R.id.x_coord_edit)
         yCoordEdit           = findViewById(R.id.y_coord_edit)
-        paddingLabel         = findViewById(R.id.padding_label)
-        paddingSeekBar       = findViewById(R.id.padding_seekbar)
+        marginLabel          = findViewById(R.id.margin_label)
+        marginSeekBar        = findViewById(R.id.margin_seekbar)
         textTypeSpinner      = findViewById(R.id.text_type_spinner)
+        widthLabel           = findViewById(R.id.width_label)
+        widthSeekBar         = findViewById(R.id.width_seekbar)
         cornerRadiusLabel    = findViewById(R.id.corner_radius_label)
         cornerRadiusSeekBar  = findViewById(R.id.corner_radius_seekbar)
         pressedCornerLabel   = findViewById(R.id.pressed_corner_label)
@@ -126,7 +130,7 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
 
     private fun injectLocationButton() {
         val btn = LocationButton(this)
-        // ID is required for the ActivityResultRegistry key on pre-API-37 fallback
+        // ID required for the ActivityResultRegistry key on pre-API-37 fallback
         btn.id = View.generateViewId()
 
         btn.setOnPermissionResultListener { isGranted ->
@@ -155,19 +159,29 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
         positionSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
                 val gravity = positionGravities[pos].second
-                customCoordsRow.visibility = if (gravity == GRAVITY_CUSTOM) View.VISIBLE else View.GONE
-                if (gravity != GRAVITY_CUSTOM) applyGravityPosition(gravity)
+                val isCustom = gravity == GRAVITY_CUSTOM
+                customCoordsRow.visibility = if (isCustom) View.VISIBLE else View.GONE
+                // Margin seekbar is meaningless when the user controls exact px coordinates
+                marginSeekBar.isEnabled = !isCustom
+                if (!isCustom) {
+                    applyGravityPosition(gravity)
+                    applyMargin(marginSeekBar.progress)
+                }
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
         findViewById<Button>(R.id.apply_position_button).setOnClickListener { applyCustomPosition() }
 
-        paddingLabel.text = getString(R.string.label_padding, 0)
-        paddingSeekBar.setOnSeekBarChangeListener(
-            seekBarListener(paddingLabel, R.string.label_padding) { progress ->
-                val px = (progress * density).toInt()
-                locationButton?.setPadding(px, px, px, px)
+        marginLabel.text = getString(R.string.label_margin, 0)
+        marginSeekBar.setOnSeekBarChangeListener(
+            object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
+                    marginLabel.text = getString(R.string.label_margin, progress)
+                    if (sb.isEnabled) applyMargin(progress)
+                }
+                override fun onStartTrackingTouch(sb: SeekBar) {}
+                override fun onStopTrackingTouch(sb: SeekBar) {}
             }
         )
     }
@@ -176,10 +190,16 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
         val btn = locationButton ?: return
         val params = btn.layoutParams as FrameLayout.LayoutParams
         params.gravity = gravity
-        params.leftMargin = 0
-        params.topMargin = 0
-        params.rightMargin = 0
-        params.bottomMargin = 0
+        // Margins are zeroed here; applyMargin() re-adds them right after
+        params.setMargins(0, 0, 0, 0)
+        btn.layoutParams = params
+    }
+
+    private fun applyMargin(progressDp: Int) {
+        val btn = locationButton ?: return
+        val px = (progressDp * density).toInt()
+        val params = btn.layoutParams as FrameLayout.LayoutParams
+        params.setMargins(px, px, px, px)
         btn.layoutParams = params
     }
 
@@ -189,10 +209,7 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
         val y = yCoordEdit.text.toString().toIntOrNull() ?: 0
         val params = btn.layoutParams as FrameLayout.LayoutParams
         params.gravity = Gravity.TOP or Gravity.START
-        params.leftMargin = x
-        params.topMargin = y
-        params.rightMargin = 0
-        params.bottomMargin = 0
+        params.setMargins(x, y, 0, 0)
         btn.layoutParams = params
     }
 
@@ -206,6 +223,19 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
+
+        widthLabel.text = getString(R.string.label_width_wrap)
+        widthSeekBar.setOnSeekBarChangeListener(
+            object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
+                    widthLabel.text = if (progress == 0) getString(R.string.label_width_wrap)
+                                      else getString(R.string.label_width_dp, progress)
+                    applyWidth(progress)
+                }
+                override fun onStartTrackingTouch(sb: SeekBar) {}
+                override fun onStopTrackingTouch(sb: SeekBar) {}
+            }
+        )
 
         cornerRadiusLabel.text = getString(R.string.label_corner_radius, 0)
         cornerRadiusSeekBar.setOnSeekBarChangeListener(
@@ -227,6 +257,14 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
                 locationButton?.setStrokeWidth((progress * density).toInt())
             }
         )
+    }
+
+    private fun applyWidth(progressDp: Int) {
+        val btn = locationButton ?: return
+        val params = btn.layoutParams as FrameLayout.LayoutParams
+        params.width = if (progressDp == 0) FrameLayout.LayoutParams.WRAP_CONTENT
+                       else (progressDp * density).toInt()
+        btn.layoutParams = params
     }
 
     // ── Color controls ────────────────────────────────────────────────────────

@@ -151,18 +151,19 @@
             </LinearLayout>
 
             <TextView
-                android:id="@+id/padding_label"
+                android:id="@+id/margin_label"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
-                tools:text="Padding: 0 dp" />
+                tools:text="Margin: 0 dp" />
 
+            <!-- Margin applied to LayoutParams; disabled in Custom (px) mode -->
             <SeekBar
-                android:id="@+id/padding_seekbar"
+                android:id="@+id/margin_seekbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:max="8" />
+                android:max="96" />
 
             <!-- Section divider -->
             <View
@@ -202,6 +203,21 @@
                     android:layout_weight="0.65" />
 
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/width_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                tools:text="Width: WRAP_CONTENT" />
+
+            <!-- 0 = WRAP_CONTENT; 1-320 = explicit dp width -->
+            <SeekBar
+                android:id="@+id/width_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="320" />
 
             <TextView
                 android:id="@+id/corner_radius_label"
