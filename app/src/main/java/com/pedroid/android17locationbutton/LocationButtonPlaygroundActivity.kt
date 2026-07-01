@@ -8,7 +8,6 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.Spinner
@@ -23,8 +22,7 @@ import androidx.core.view.WindowInsetsCompat
 
 class LocationButtonPlaygroundActivity : AppCompatActivity() {
 
-    private var locationButton: LocationButton? = null
-    private lateinit var buttonContainer: FrameLayout
+    private lateinit var controller: LocationButtonController
 
     // Position controls
     private lateinit var positionSpinner: Spinner
@@ -54,8 +52,6 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
     private lateinit var iconTintEdit: EditText
     private lateinit var strokeColorPreview: View
     private lateinit var strokeColorEdit: EditText
-
-    private val density get() = resources.displayMetrics.density
 
     private val positionGravities = listOf(
         "Center"       to Gravity.CENTER,
@@ -91,16 +87,36 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
         }
 
         bindViews()
-        injectLocationButton()
+        attachController()
         setupPositionControls()
         setupTextShapeControls()
         setupColorControls()
     }
 
+    // ── Controller attachment ─────────────────────────────────────────────────
+
+    private fun attachController() {
+        controller = LocationButtonController
+            .attach(findViewById(R.id.button_container))
+            .setCallback(object : LocationButtonController.Callback {
+                override fun onPermissionResult(granted: Boolean) {
+                    val msgRes = if (granted) R.string.toast_location_granted
+                                 else R.string.toast_location_denied
+                    Toast.makeText(this@LocationButtonPlaygroundActivity, msgRes, Toast.LENGTH_SHORT).show()
+                }
+                override fun onError(throwable: Throwable) {
+                    Toast.makeText(
+                        this@LocationButtonPlaygroundActivity,
+                        getString(R.string.toast_error, throwable.message ?: "Unknown"),
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+            })
+    }
+
     // ── View binding ──────────────────────────────────────────────────────────
 
     private fun bindViews() {
-        buttonContainer      = findViewById(R.id.button_container)
         positionSpinner      = findViewById(R.id.position_spinner)
         customCoordsRow      = findViewById(R.id.custom_coords_row)
         xCoordEdit           = findViewById(R.id.x_coord_edit)
@@ -126,32 +142,6 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
         strokeColorEdit      = findViewById(R.id.stroke_color_edit)
     }
 
-    // ── Dynamic injection ─────────────────────────────────────────────────────
-
-    private fun injectLocationButton() {
-        val btn = LocationButton(this)
-        // ID required for the ActivityResultRegistry key on pre-API-37 fallback
-        btn.id = View.generateViewId()
-
-        btn.setOnPermissionResultListener { isGranted ->
-            val msgRes = if (isGranted) R.string.toast_location_granted else R.string.toast_location_denied
-            Toast.makeText(this, msgRes, Toast.LENGTH_SHORT).show()
-        }
-        btn.setOnErrorListener { e ->
-            Toast.makeText(this, getString(R.string.toast_error, e.message ?: "Unknown"), Toast.LENGTH_LONG).show()
-        }
-
-        buttonContainer.addView(
-            btn,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER,
-            )
-        )
-        locationButton = btn
-    }
-
     // ── Position controls ─────────────────────────────────────────────────────
 
     private fun setupPositionControls() {
@@ -161,56 +151,30 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
                 val gravity = positionGravities[pos].second
                 val isCustom = gravity == GRAVITY_CUSTOM
                 customCoordsRow.visibility = if (isCustom) View.VISIBLE else View.GONE
-                // Margin seekbar is meaningless when the user controls exact px coordinates
                 marginSeekBar.isEnabled = !isCustom
                 if (!isCustom) {
-                    applyGravityPosition(gravity)
-                    applyMargin(marginSeekBar.progress)
+                    controller.setGravityPosition(gravity)
+                    controller.setMarginDp(marginSeekBar.progress)
                 }
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
-        findViewById<Button>(R.id.apply_position_button).setOnClickListener { applyCustomPosition() }
+        findViewById<Button>(R.id.apply_position_button).setOnClickListener {
+            val x = xCoordEdit.text.toString().toIntOrNull() ?: 0
+            val y = yCoordEdit.text.toString().toIntOrNull() ?: 0
+            controller.setCustomPosition(x, y)
+        }
 
         marginLabel.text = getString(R.string.label_margin, 0)
-        marginSeekBar.setOnSeekBarChangeListener(
-            object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
-                    marginLabel.text = getString(R.string.label_margin, progress)
-                    if (sb.isEnabled) applyMargin(progress)
-                }
-                override fun onStartTrackingTouch(sb: SeekBar) {}
-                override fun onStopTrackingTouch(sb: SeekBar) {}
+        marginSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
+                marginLabel.text = getString(R.string.label_margin, progress)
+                if (sb.isEnabled) controller.setMarginDp(progress)
             }
-        )
-    }
-
-    private fun applyGravityPosition(gravity: Int) {
-        val btn = locationButton ?: return
-        val params = btn.layoutParams as FrameLayout.LayoutParams
-        params.gravity = gravity
-        // Margins are zeroed here; applyMargin() re-adds them right after
-        params.setMargins(0, 0, 0, 0)
-        btn.layoutParams = params
-    }
-
-    private fun applyMargin(progressDp: Int) {
-        val btn = locationButton ?: return
-        val px = (progressDp * density).toInt()
-        val params = btn.layoutParams as FrameLayout.LayoutParams
-        params.setMargins(px, px, px, px)
-        btn.layoutParams = params
-    }
-
-    private fun applyCustomPosition() {
-        val btn = locationButton ?: return
-        val x = xCoordEdit.text.toString().toIntOrNull() ?: 0
-        val y = yCoordEdit.text.toString().toIntOrNull() ?: 0
-        val params = btn.layoutParams as FrameLayout.LayoutParams
-        params.gravity = Gravity.TOP or Gravity.START
-        params.setMargins(x, y, 0, 0)
-        btn.layoutParams = params
+            override fun onStartTrackingTouch(sb: SeekBar) {}
+            override fun onStopTrackingTouch(sb: SeekBar) {}
+        })
     }
 
     // ── Text & shape controls ─────────────────────────────────────────────────
@@ -219,52 +183,42 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
         textTypeSpinner.adapter = simpleAdapter(textTypes.map { it.first })
         textTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
-                locationButton?.setTextType(textTypes[pos].second)
+                controller.setTextType(textTypes[pos].second)
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
         widthLabel.text = getString(R.string.label_width_wrap)
-        widthSeekBar.setOnSeekBarChangeListener(
-            object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
-                    widthLabel.text = if (progress == 0) getString(R.string.label_width_wrap)
-                                      else getString(R.string.label_width_dp, progress)
-                    applyWidth(progress)
-                }
-                override fun onStartTrackingTouch(sb: SeekBar) {}
-                override fun onStopTrackingTouch(sb: SeekBar) {}
+        widthSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
+                widthLabel.text = if (progress == 0) getString(R.string.label_width_wrap)
+                                  else getString(R.string.label_width_dp, progress)
+                controller.setWidthDp(progress)
             }
-        )
+            override fun onStartTrackingTouch(sb: SeekBar) {}
+            override fun onStopTrackingTouch(sb: SeekBar) {}
+        })
 
         cornerRadiusLabel.text = getString(R.string.label_corner_radius, 0)
         cornerRadiusSeekBar.setOnSeekBarChangeListener(
             seekBarListener(cornerRadiusLabel, R.string.label_corner_radius) { progress ->
-                locationButton?.setCornerRadius(progress * density)
+                controller.setCornerRadiusDp(progress.toFloat())
             }
         )
 
         pressedCornerLabel.text = getString(R.string.label_pressed_corner_radius, 0)
         pressedCornerSeekBar.setOnSeekBarChangeListener(
             seekBarListener(pressedCornerLabel, R.string.label_pressed_corner_radius) { progress ->
-                locationButton?.setPressedCornerRadius(progress * density)
+                controller.setPressedCornerRadiusDp(progress.toFloat())
             }
         )
 
         strokeWidthLabel.text = getString(R.string.label_stroke_width, 0)
         strokeWidthSeekBar.setOnSeekBarChangeListener(
             seekBarListener(strokeWidthLabel, R.string.label_stroke_width) { progress ->
-                locationButton?.setStrokeWidth((progress * density).toInt())
+                controller.setStrokeWidthDp(progress)
             }
         )
-    }
-
-    private fun applyWidth(progressDp: Int) {
-        val btn = locationButton ?: return
-        val params = btn.layoutParams as FrameLayout.LayoutParams
-        params.width = if (progressDp == 0) FrameLayout.LayoutParams.WRAP_CONTENT
-                       else (progressDp * density).toInt()
-        btn.layoutParams = params
     }
 
     // ── Color controls ────────────────────────────────────────────────────────
@@ -274,10 +228,10 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
     }
 
     private fun applyColors() {
-        applyColorField(bgColorEdit, bgColorPreview) { locationButton?.setBackgroundColor(it) }
-        applyColorField(textColorEdit, textColorPreview) { locationButton?.setTextColor(it) }
-        applyColorField(iconTintEdit, iconTintPreview) { locationButton?.setIconTint(it) }
-        applyColorField(strokeColorEdit, strokeColorPreview) { locationButton?.setStrokeColor(it) }
+        applyColorField(bgColorEdit, bgColorPreview) { controller.setBackgroundColor(it) }
+        applyColorField(textColorEdit, textColorPreview) { controller.setTextColor(it) }
+        applyColorField(iconTintEdit, iconTintPreview) { controller.setIconTint(it) }
+        applyColorField(strokeColorEdit, strokeColorPreview) { controller.setStrokeColor(it) }
     }
 
     private fun applyColorField(edit: EditText, preview: View, apply: (Int) -> Unit) {
@@ -316,6 +270,11 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        controller.detach()
     }
 
     companion object {

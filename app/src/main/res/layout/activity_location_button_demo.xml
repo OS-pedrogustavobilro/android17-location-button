@@ -33,8 +33,9 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/demo_title" />
 
-    <androidx.core.locationbutton.LocationButton
-        android:id="@+id/location_button"
+    <!-- Container into which LocationButtonController injects the button at runtime -->
+    <FrameLayout
+        android:id="@+id/location_button_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -55,7 +56,7 @@
         android:textAppearance="?attr/textAppearanceBodyLarge"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/location_button" />
+        app:layout_constraintTop_toBottomOf="@id/location_button_container" />
 
     <TextView
         android:id="@+id/location_text"
