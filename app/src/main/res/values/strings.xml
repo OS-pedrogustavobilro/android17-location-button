@@ -12,6 +12,11 @@
     <!-- Playground screen -->
     <string name="open_playground">Location Button Playground</string>
     <string name="playground_preview_watermark">PREVIEW AREA</string>
+    <string name="section_location">LOCATION</string>
+    <string name="label_location_strategy">Strategy</string>
+    <string name="label_update_interval">Update interval: %d s</string>
+    <string name="label_min_distance">Min distance: %d m</string>
+    <string name="btn_stop_updates">Stop Updates</string>
     <string name="section_position">POSITION</string>
     <string name="section_text_shape">TEXT &amp; SHAPE</string>
     <string name="section_colors">COLORS</string>

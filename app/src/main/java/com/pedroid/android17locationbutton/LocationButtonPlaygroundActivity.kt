@@ -1,6 +1,7 @@
 package com.pedroid.android17locationbutton
 
 import android.graphics.Color
+import android.location.Location
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -19,10 +20,24 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.locationbutton.LocationButton
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.launch
 
 class LocationButtonPlaygroundActivity : AppCompatActivity() {
 
     private lateinit var controller: LocationButtonController
+
+    // Location strategy controls
+    private lateinit var locationStrategySpinner: Spinner
+    private lateinit var updatesOptionsRow: LinearLayout
+    private lateinit var updateIntervalLabel: TextView
+    private lateinit var updateIntervalSeekBar: SeekBar
+    private lateinit var minDistanceLabel: TextView
+    private lateinit var minDistanceSeekBar: SeekBar
+    private lateinit var stopUpdatesButton: Button
+    private lateinit var locationResultText: TextView
 
     // Position controls
     private lateinit var positionSpinner: Spinner
@@ -52,6 +67,12 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
     private lateinit var iconTintEdit: EditText
     private lateinit var strokeColorPreview: View
     private lateinit var strokeColorEdit: EditText
+
+    private val locationStrategies = listOf(
+        "Last Known"       to LocationButtonController.LocationStrategy.LAST_KNOWN,
+        "Current Location" to LocationButtonController.LocationStrategy.CURRENT,
+        "Location Updates" to LocationButtonController.LocationStrategy.UPDATES,
+    )
 
     private val positionGravities = listOf(
         "Center"       to Gravity.CENTER,
@@ -88,6 +109,8 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
 
         bindViews()
         attachController()
+        collectLocationUpdatesFlow()
+        setupLocationStrategyControls()
         setupPositionControls()
         setupTextShapeControls()
         setupColorControls()
@@ -98,11 +121,24 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
     private fun attachController() {
         controller = LocationButtonController
             .attach(findViewById(R.id.button_container))
+            .also { it.fetchLocationOnGrant = true }
             .setCallback(object : LocationButtonController.Callback {
                 override fun onPermissionResult(granted: Boolean) {
                     val msgRes = if (granted) R.string.toast_location_granted
                                  else R.string.toast_location_denied
                     Toast.makeText(this@LocationButtonPlaygroundActivity, msgRes, Toast.LENGTH_SHORT).show()
+                    if (granted && controller.locationStrategy == LocationButtonController.LocationStrategy.UPDATES) {
+                        stopUpdatesButton.visibility = View.VISIBLE
+                    }
+                }
+                override fun onLocation(location: Location?) {
+                    // Fired for LAST_KNOWN and CURRENT; also fired per-update for UPDATES
+                    locationResultText.text = if (location != null) {
+                        "Lat: %.6f  |  Lng: %.6f".format(location.latitude, location.longitude)
+                    } else {
+                        getString(R.string.location_no_cache)
+                    }
+                    locationResultText.visibility = View.VISIBLE
                 }
                 override fun onError(throwable: Throwable) {
                     Toast.makeText(
@@ -114,32 +150,94 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
             })
     }
 
+    /**
+     * Collects [LocationButtonController.locationUpdatesFlow] to keep the Stop button
+     * visible while updates are streaming. This demonstrates the Flow-based alternative
+     * to the [LocationButtonController.Callback.onLocation] callback for UPDATES mode.
+     */
+    private fun collectLocationUpdatesFlow() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                controller.locationUpdatesFlow.collect {
+                    stopUpdatesButton.visibility = View.VISIBLE
+                }
+            }
+        }
+    }
+
     // ── View binding ──────────────────────────────────────────────────────────
 
     private fun bindViews() {
-        positionSpinner      = findViewById(R.id.position_spinner)
-        customCoordsRow      = findViewById(R.id.custom_coords_row)
-        xCoordEdit           = findViewById(R.id.x_coord_edit)
-        yCoordEdit           = findViewById(R.id.y_coord_edit)
-        marginLabel          = findViewById(R.id.margin_label)
-        marginSeekBar        = findViewById(R.id.margin_seekbar)
-        textTypeSpinner      = findViewById(R.id.text_type_spinner)
-        widthLabel           = findViewById(R.id.width_label)
-        widthSeekBar         = findViewById(R.id.width_seekbar)
-        cornerRadiusLabel    = findViewById(R.id.corner_radius_label)
-        cornerRadiusSeekBar  = findViewById(R.id.corner_radius_seekbar)
-        pressedCornerLabel   = findViewById(R.id.pressed_corner_label)
-        pressedCornerSeekBar = findViewById(R.id.pressed_corner_seekbar)
-        strokeWidthLabel     = findViewById(R.id.stroke_width_label)
-        strokeWidthSeekBar   = findViewById(R.id.stroke_width_seekbar)
-        bgColorPreview       = findViewById(R.id.bg_color_preview)
-        bgColorEdit          = findViewById(R.id.bg_color_edit)
-        textColorPreview     = findViewById(R.id.text_color_preview)
-        textColorEdit        = findViewById(R.id.text_color_edit)
-        iconTintPreview      = findViewById(R.id.icon_tint_preview)
-        iconTintEdit         = findViewById(R.id.icon_tint_edit)
-        strokeColorPreview   = findViewById(R.id.stroke_color_preview)
-        strokeColorEdit      = findViewById(R.id.stroke_color_edit)
+        locationStrategySpinner  = findViewById(R.id.location_strategy_spinner)
+        updatesOptionsRow        = findViewById(R.id.updates_options_row)
+        updateIntervalLabel      = findViewById(R.id.update_interval_label)
+        updateIntervalSeekBar    = findViewById(R.id.update_interval_seekbar)
+        minDistanceLabel         = findViewById(R.id.min_distance_label)
+        minDistanceSeekBar       = findViewById(R.id.min_distance_seekbar)
+        stopUpdatesButton        = findViewById(R.id.stop_updates_button)
+        locationResultText       = findViewById(R.id.location_result_text)
+        positionSpinner          = findViewById(R.id.position_spinner)
+        customCoordsRow          = findViewById(R.id.custom_coords_row)
+        xCoordEdit               = findViewById(R.id.x_coord_edit)
+        yCoordEdit               = findViewById(R.id.y_coord_edit)
+        marginLabel              = findViewById(R.id.margin_label)
+        marginSeekBar            = findViewById(R.id.margin_seekbar)
+        textTypeSpinner          = findViewById(R.id.text_type_spinner)
+        widthLabel               = findViewById(R.id.width_label)
+        widthSeekBar             = findViewById(R.id.width_seekbar)
+        cornerRadiusLabel        = findViewById(R.id.corner_radius_label)
+        cornerRadiusSeekBar      = findViewById(R.id.corner_radius_seekbar)
+        pressedCornerLabel       = findViewById(R.id.pressed_corner_label)
+        pressedCornerSeekBar     = findViewById(R.id.pressed_corner_seekbar)
+        strokeWidthLabel         = findViewById(R.id.stroke_width_label)
+        strokeWidthSeekBar       = findViewById(R.id.stroke_width_seekbar)
+        bgColorPreview           = findViewById(R.id.bg_color_preview)
+        bgColorEdit              = findViewById(R.id.bg_color_edit)
+        textColorPreview         = findViewById(R.id.text_color_preview)
+        textColorEdit            = findViewById(R.id.text_color_edit)
+        iconTintPreview          = findViewById(R.id.icon_tint_preview)
+        iconTintEdit             = findViewById(R.id.icon_tint_edit)
+        strokeColorPreview       = findViewById(R.id.stroke_color_preview)
+        strokeColorEdit          = findViewById(R.id.stroke_color_edit)
+    }
+
+    // ── Location strategy controls ────────────────────────────────────────────
+
+    private fun setupLocationStrategyControls() {
+        locationStrategySpinner.adapter = simpleAdapter(locationStrategies.map { it.first })
+        locationStrategySpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
+                val strategy = locationStrategies[pos].second
+                controller.locationStrategy = strategy
+                val isUpdates = strategy == LocationButtonController.LocationStrategy.UPDATES
+                updatesOptionsRow.visibility = if (isUpdates) View.VISIBLE else View.GONE
+                if (!isUpdates) {
+                    controller.stopLocationUpdates()
+                    stopUpdatesButton.visibility = View.GONE
+                    locationResultText.visibility = View.GONE
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+
+        updateIntervalLabel.text = getString(R.string.label_update_interval, 5)
+        updateIntervalSeekBar.setOnSeekBarChangeListener(
+            seekBarListener(updateIntervalLabel, R.string.label_update_interval) { progress ->
+                controller.locationUpdateIntervalMs = maxOf(1, progress) * 1_000L
+            }
+        )
+
+        minDistanceLabel.text = getString(R.string.label_min_distance, 0)
+        minDistanceSeekBar.setOnSeekBarChangeListener(
+            seekBarListener(minDistanceLabel, R.string.label_min_distance) { progress ->
+                controller.locationUpdateMinDistanceM = progress.toFloat()
+            }
+        )
+
+        stopUpdatesButton.setOnClickListener {
+            controller.stopLocationUpdates()
+            stopUpdatesButton.visibility = View.GONE
+        }
     }
 
     // ── Position controls ─────────────────────────────────────────────────────

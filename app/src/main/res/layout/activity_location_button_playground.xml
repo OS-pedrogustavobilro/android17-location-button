@@ -35,6 +35,21 @@
             android:text="@string/playground_preview_watermark"
             android:textAppearance="?attr/textAppearanceLabelSmall" />
 
+        <!-- Location result overlay — shown after permission is granted -->
+        <TextView
+            android:id="@+id/location_result_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:background="?attr/colorSurface"
+            android:alpha="0.9"
+            android:gravity="center"
+            android:padding="8dp"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:visibility="gone"
+            tools:text="Lat: 37.422160 | Lng: -122.084270"
+            tools:visibility="visible" />
+
     </FrameLayout>
 
     <!-- Divider at the guideline position -->
@@ -164,6 +179,96 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:max="96" />
+
+            <!-- Section divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginBottom="16dp"
+                android:layout_marginTop="16dp"
+                android:background="?attr/colorOutlineVariant" />
+
+            <!-- ══════════════ LOCATION ══════════════ -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:letterSpacing="0.1"
+                android:text="@string/section_location"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorPrimary" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.35"
+                    android:text="@string/label_location_strategy"
+                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                <Spinner
+                    android:id="@+id/location_strategy_spinner"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.65" />
+
+            </LinearLayout>
+
+            <!-- Options shown only for UPDATES strategy -->
+            <LinearLayout
+                android:id="@+id/updates_options_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/update_interval_label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    tools:text="Update interval: 5 s" />
+
+                <SeekBar
+                    android:id="@+id/update_interval_seekbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="30"
+                    android:progress="5" />
+
+                <TextView
+                    android:id="@+id/min_distance_label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    tools:text="Min distance: 0 m" />
+
+                <SeekBar
+                    android:id="@+id/min_distance_seekbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="50" />
+
+                <Button
+                    android:id="@+id/stop_updates_button"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/btn_stop_updates"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
 
             <!-- Section divider -->
             <View

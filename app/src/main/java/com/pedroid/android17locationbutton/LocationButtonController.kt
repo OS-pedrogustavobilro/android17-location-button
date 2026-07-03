@@ -4,11 +4,20 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import android.location.LocationManager
+import android.os.CancellationSignal
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
 import androidx.annotation.ColorInt
+import androidx.core.content.ContextCompat
+import androidx.core.location.LocationListenerCompat
+import androidx.core.location.LocationManagerCompat
+import androidx.core.location.LocationRequestCompat
 import androidx.core.locationbutton.LocationButton
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 /**
  * Manages a [LocationButton] injected at runtime into a [FrameLayout] container.
@@ -16,8 +25,8 @@ import androidx.core.locationbutton.LocationButton
  * Responsibilities:
  *  - Creates and attaches the [LocationButton] programmatically (no XML required)
  *  - Owns permission-result and error wiring
- *  - Optionally fetches the last-known location after the grant and delivers it via [Callback]
- *  - Tracks a [State] and exposes show / hide / reset controls
+ *  - Supports three [LocationStrategy] modes for resolving the location after a button tap
+ *  - Tracks a [State] and exposes [show] / [hide] / [reset] controls
  *  - Provides dp-based fluent setters for every public [LocationButton] API
  *
  * Obtain an instance via [attach].
@@ -29,6 +38,32 @@ class LocationButtonController private constructor(
     // ── Public API types ──────────────────────────────────────────────────────
 
     enum class State { IDLE, GRANTED, DENIED, ERROR }
+
+    /**
+     * Determines how the controller resolves the device location once the
+     * [LocationButton] grants permission.
+     */
+    enum class LocationStrategy {
+        /**
+         * Reads the last cached fix from any enabled provider.
+         * Fast but may return a stale or null result.
+         */
+        LAST_KNOWN,
+
+        /**
+         * Requests a single fresh fix via [LocationManagerCompat.getCurrentLocation].
+         * Delivers null if no fix arrives before the system cancels the request.
+         * A previous in-flight request is cancelled when a new button tap occurs.
+         */
+        CURRENT,
+
+        /**
+         * Starts continuous updates via [LocationManagerCompat.requestLocationUpdates].
+         * Each update fires [Callback.onLocation] **and** emits to [locationUpdatesFlow].
+         * Call [stopLocationUpdates] to cancel.
+         */
+        UPDATES,
+    }
 
     interface Callback {
         fun onPermissionResult(granted: Boolean)
@@ -42,26 +77,51 @@ class LocationButtonController private constructor(
     private val density: Float = context.resources.displayMetrics.density
 
     private val button: LocationButton = LocationButton(context).apply {
-        // ID is required for the ActivityResultRegistry key used by the pre-API-37 fallback
         id = View.generateViewId()
     }
 
     private var _state: State = State.IDLE
     private var callback: Callback? = null
 
+    // Active request handles
+    private var locationListener: LocationListenerCompat? = null
+    private var cancellationSignal: CancellationSignal? = null
+
+    // Flow for UPDATES mode — replay=0 so late collectors don't get stale data
+    private val _locationUpdatesFlow = MutableSharedFlow<Location>(
+        replay = 0,
+        extraBufferCapacity = 8,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
     // ── Configuration ─────────────────────────────────────────────────────────
+
+    /** Strategy used to resolve the location after the button grants permission. */
+    var locationStrategy: LocationStrategy = LocationStrategy.LAST_KNOWN
+
+    /** Desired update interval for [LocationStrategy.UPDATES] mode (milliseconds). */
+    var locationUpdateIntervalMs: Long = 5_000L
+
+    /** Minimum displacement (metres) between updates in [LocationStrategy.UPDATES] mode. */
+    var locationUpdateMinDistanceM: Float = 0f
 
     /** When true, hides the button automatically after permission is granted. */
     var autoHideOnGranted: Boolean = false
 
-    /** When true, fetches the last-known location after permission is granted and
-     *  delivers it via [Callback.onLocation]. */
+    /** When true, fetches / starts location after permission is granted. */
     var fetchLocationOnGrant: Boolean = false
 
     // ── Read-only state ───────────────────────────────────────────────────────
 
     val state: State get() = _state
     val isVisible: Boolean get() = button.visibility == View.VISIBLE
+
+    /**
+     * Emits every location update received in [LocationStrategy.UPDATES] mode.
+     * Callers who prefer coroutines can collect this instead of (or alongside)
+     * [Callback.onLocation].
+     */
+    val locationUpdatesFlow: SharedFlow<Location> = _locationUpdatesFlow.asSharedFlow()
 
     // ── Initialisation ────────────────────────────────────────────────────────
 
@@ -89,7 +149,6 @@ class LocationButtonController private constructor(
     // ── Factory ───────────────────────────────────────────────────────────────
 
     companion object {
-        /** Creates a controller and immediately injects the [LocationButton] into [container]. */
         fun attach(container: FrameLayout): LocationButtonController =
             LocationButtonController(container)
     }
@@ -101,8 +160,8 @@ class LocationButtonController private constructor(
         return this
     }
 
-    /** Removes the button from the container and clears the callback reference. */
     fun detach() {
+        stopLocationUpdates()
         container.removeView(button)
         callback = null
     }
@@ -119,19 +178,114 @@ class LocationButtonController private constructor(
         return this
     }
 
-    /** Resets state to [State.IDLE] and makes the button visible again. */
     fun reset(): LocationButtonController {
         _state = State.IDLE
         return show()
     }
 
-    // ── Position ──────────────────────────────────────────────────────────────
+    // ── Location delivery ─────────────────────────────────────────────────────
 
     /**
-     * Positions the button using a [Gravity] constant (e.g. [Gravity.CENTER],
-     * [Gravity.TOP] or [Gravity.BOTTOM] or [Gravity.START]).
-     * Resets all margins to 0; call [setMarginDp] afterward to add spacing.
+     * Cancels any in-flight [LocationStrategy.CURRENT] request or active
+     * [LocationStrategy.UPDATES] stream. Safe to call at any time.
      */
+    fun stopLocationUpdates() {
+        cancellationSignal?.cancel()
+        cancellationSignal = null
+        locationListener?.let {
+            context.getSystemService(LocationManager::class.java).removeUpdates(it)
+        }
+        locationListener = null
+    }
+
+    private fun deliverLocation() {
+        when (locationStrategy) {
+            LocationStrategy.LAST_KNOWN -> deliverLastKnown()
+            LocationStrategy.CURRENT    -> deliverCurrent()
+            LocationStrategy.UPDATES    -> startUpdates()
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun deliverLastKnown() {
+        val lm = context.getSystemService(LocationManager::class.java)
+        callback?.onLocation(getLastKnown(lm))
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun deliverCurrent() {
+        val lm = context.getSystemService(LocationManager::class.java)
+        val provider = getBestProvider(lm) ?: run {
+            // No active provider — fall back to whatever is cached
+            callback?.onLocation(getLastKnown(lm))
+            return
+        }
+        cancellationSignal?.cancel()
+        cancellationSignal = CancellationSignal()
+        LocationManagerCompat.getCurrentLocation(
+            lm,
+            provider,
+            cancellationSignal,
+            ContextCompat.getMainExecutor(context),
+        ) { freshLocation ->
+            // getCurrentLocation delivers null when no fix arrives before the internal timeout.
+            // Fall back to the most-recent cached fix so the caller always gets something.
+            callback?.onLocation(freshLocation ?: getLastKnown(lm))
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun startUpdates() {
+        stopLocationUpdates()
+        val lm = context.getSystemService(LocationManager::class.java)
+        val provider = getBestProvider(lm) ?: return
+
+        // Deliver the last cached fix immediately so the caller has something to show
+        // while waiting for the first real update to arrive.
+        getLastKnown(lm)?.let { cached ->
+            _locationUpdatesFlow.tryEmit(cached)
+            callback?.onLocation(cached)
+        }
+
+        val request = LocationRequestCompat.Builder(locationUpdateIntervalMs)
+            .setMinUpdateDistanceMeters(locationUpdateMinDistanceM)
+            .build()
+        val listener = LocationListenerCompat { location ->
+            _locationUpdatesFlow.tryEmit(location)
+            callback?.onLocation(location)
+        }
+        LocationManagerCompat.requestLocationUpdates(
+            lm,
+            provider,
+            request,
+            ContextCompat.getMainExecutor(context),
+            listener,
+        )
+        locationListener = listener
+    }
+
+    /**
+     * Returns the most-recently cached location across all currently active providers,
+     * or null if no fix has ever been recorded.
+     */
+    @SuppressLint("MissingPermission")
+    private fun getLastKnown(lm: LocationManager): Location? =
+        lm.getProviders(true)
+            .asSequence()
+            .mapNotNull { lm.getLastKnownLocation(it) }
+            .maxByOrNull { it.time }
+
+    private fun getBestProvider(lm: LocationManager): String? {
+        val active = lm.getProviders(true)
+        return when {
+            LocationManager.GPS_PROVIDER in active     -> LocationManager.GPS_PROVIDER
+            LocationManager.NETWORK_PROVIDER in active -> LocationManager.NETWORK_PROVIDER
+            else -> active.firstOrNull()
+        }
+    }
+
+    // ── Position ──────────────────────────────────────────────────────────────
+
     fun setGravityPosition(gravity: Int): LocationButtonController {
         updateParams {
             it.gravity = gravity
@@ -140,10 +294,6 @@ class LocationButtonController private constructor(
         return this
     }
 
-    /**
-     * Positions the button at an absolute [xPx]/[yPx] pixel offset from the
-     * top-start corner of the container (gravity is set to TOP|START).
-     */
     fun setCustomPosition(xPx: Int, yPx: Int): LocationButtonController {
         updateParams {
             it.gravity = Gravity.TOP or Gravity.START
@@ -152,7 +302,6 @@ class LocationButtonController private constructor(
         return this
     }
 
-    /** Applies a uniform margin (in dp) on all four sides of the button. */
     fun setMarginDp(dp: Int): LocationButtonController {
         val px = (dp * density).toInt()
         updateParams { it.setMargins(px, px, px, px) }
@@ -161,10 +310,6 @@ class LocationButtonController private constructor(
 
     // ── Dimensions ────────────────────────────────────────────────────────────
 
-    /**
-     * Sets an explicit button width in dp.
-     * Pass 0 to restore [FrameLayout.LayoutParams.WRAP_CONTENT].
-     */
     fun setWidthDp(dp: Int): LocationButtonController {
         updateParams {
             it.width = if (dp == 0) FrameLayout.LayoutParams.WRAP_CONTENT
@@ -217,16 +362,6 @@ class LocationButtonController private constructor(
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
-
-    @SuppressLint("MissingPermission")
-    private fun deliverLocation() {
-        val locationManager = context.getSystemService(LocationManager::class.java)
-        val location = locationManager.getProviders(true)
-            .asSequence()
-            .mapNotNull { locationManager.getLastKnownLocation(it) }
-            .firstOrNull()
-        callback?.onLocation(location)
-    }
 
     private fun updateParams(block: (FrameLayout.LayoutParams) -> Unit) {
         val params = button.layoutParams as FrameLayout.LayoutParams
