@@ -134,7 +134,7 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
                 override fun onLocation(location: Location?) {
                     // Fired for LAST_KNOWN and CURRENT; also fired per-update for UPDATES
                     locationResultText.text = if (location != null) {
-                        "Lat: %.6f  |  Lng: %.6f".format(location.latitude, location.longitude)
+                        "Lat: %.6f  |  Lng: %.6f  |  %s".format(location.latitude, location.longitude, location.formattedTime())
                     } else {
                         getString(R.string.location_no_cache)
                     }

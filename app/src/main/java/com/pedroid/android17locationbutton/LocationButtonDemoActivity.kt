@@ -45,7 +45,7 @@ class LocationButtonDemoActivity : AppCompatActivity(), LocationButtonController
 
     override fun onLocation(location: Location?) {
         locationText.text = if (location != null) {
-            "Lat: %.6f\nLng: %.6f".format(location.latitude, location.longitude)
+            "Lat: %.6f\nLng: %.6f\n@ %s".format(location.latitude, location.longitude, location.formattedTime())
         } else {
             getString(R.string.location_no_cache)
         }
