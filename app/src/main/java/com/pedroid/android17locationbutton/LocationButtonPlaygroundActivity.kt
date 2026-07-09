@@ -17,7 +17,6 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.locationbutton.LocationButton
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.appbar.MaterialToolbar
@@ -89,12 +88,12 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
     )
 
     private val textTypes = listOf(
-        "Precise Location"           to LocationButton.TEXT_TYPE_PRECISE_LOCATION,
-        "Use Precise Location"       to LocationButton.TEXT_TYPE_USE_PRECISE_LOCATION,
-        "Share Precise Location"     to LocationButton.TEXT_TYPE_SHARE_PRECISE_LOCATION,
-        "Near My Precise Location"   to LocationButton.TEXT_TYPE_NEAR_MY_PRECISE_LOCATION,
-        "Near Your Precise Location" to LocationButton.TEXT_TYPE_NEAR_YOUR_PRECISE_LOCATION,
-        "None"                       to LocationButton.TEXT_TYPE_NONE,
+        "Precise Location"           to LocationButtonController.TextType.PRECISE_LOCATION,
+        "Use Precise Location"       to LocationButtonController.TextType.USE_PRECISE_LOCATION,
+        "Share Precise Location"     to LocationButtonController.TextType.SHARE_PRECISE_LOCATION,
+        "Near My Precise Location"   to LocationButtonController.TextType.NEAR_MY_PRECISE_LOCATION,
+        "Near Your Precise Location" to LocationButtonController.TextType.NEAR_YOUR_PRECISE_LOCATION,
+        "None"                       to LocationButtonController.TextType.NONE,
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {

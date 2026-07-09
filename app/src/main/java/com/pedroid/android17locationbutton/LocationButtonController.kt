@@ -65,6 +65,16 @@ class LocationButtonController private constructor(
         UPDATES,
     }
 
+    /** Controls which label text the [LocationButton] displays. */
+    enum class TextType(internal val constant: Int) {
+        NONE(LocationButton.TEXT_TYPE_NONE),
+        PRECISE_LOCATION(LocationButton.TEXT_TYPE_PRECISE_LOCATION),
+        USE_PRECISE_LOCATION(LocationButton.TEXT_TYPE_USE_PRECISE_LOCATION),
+        SHARE_PRECISE_LOCATION(LocationButton.TEXT_TYPE_SHARE_PRECISE_LOCATION),
+        NEAR_MY_PRECISE_LOCATION(LocationButton.TEXT_TYPE_NEAR_MY_PRECISE_LOCATION),
+        NEAR_YOUR_PRECISE_LOCATION(LocationButton.TEXT_TYPE_NEAR_YOUR_PRECISE_LOCATION),
+    }
+
     interface Callback {
         fun onPermissionResult(granted: Boolean)
         fun onLocation(location: Location?) {}
@@ -320,8 +330,8 @@ class LocationButtonController private constructor(
 
     // ── Appearance ────────────────────────────────────────────────────────────
 
-    fun setTextType(textType: Int): LocationButtonController {
-        button.setTextType(textType)
+    fun setTextType(textType: TextType): LocationButtonController {
+        button.setTextType(textType.constant)
         return this
     }
 
