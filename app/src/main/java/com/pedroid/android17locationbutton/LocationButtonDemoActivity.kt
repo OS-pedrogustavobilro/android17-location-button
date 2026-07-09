@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.android.material.appbar.MaterialToolbar
 
 class LocationButtonDemoActivity : AppCompatActivity(), LocationButtonController.Callback {
 
@@ -25,6 +26,9 @@ class LocationButtonDemoActivity : AppCompatActivity(), LocationButtonController
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        setSupportActionBar(findViewById<MaterialToolbar>(R.id.toolbar))
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         statusText = findViewById(R.id.status_text)
         locationText = findViewById(R.id.location_text)

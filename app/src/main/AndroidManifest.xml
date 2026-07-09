@@ -28,10 +28,12 @@
         <activity
             android:name=".LocationButtonDemoActivity"
             android:exported="false"
+            android:label="@string/demo_title"
             android:parentActivityName=".MainActivity" />
         <activity
             android:name=".LocationButtonPlaygroundActivity"
             android:exported="false"
+            android:label="@string/open_playground"
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustPan" />
     </application>

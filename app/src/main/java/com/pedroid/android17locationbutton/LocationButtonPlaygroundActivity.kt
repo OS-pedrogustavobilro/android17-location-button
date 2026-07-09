@@ -20,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.locationbutton.LocationButton
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.android.material.appbar.MaterialToolbar
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -106,6 +107,9 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
             insets
         }
+
+        setSupportActionBar(findViewById<MaterialToolbar>(R.id.toolbar))
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         bindViews()
         attachController()

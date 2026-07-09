@@ -7,15 +7,10 @@
     android:layout_height="match_parent"
     tools:context=".LocationButtonDemoActivity">
 
-    <TextView
-        android:id="@+id/demo_title"
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="24dp"
-        android:text="@string/demo_title"
-        android:textAppearance="?attr/textAppearanceHeadlineMedium"
+        android:layout_height="?attr/actionBarSize"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -31,7 +26,7 @@
         android:textAppearance="?attr/textAppearanceBodyMedium"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/demo_title" />
+        app:layout_constraintTop_toBottomOf="@id/toolbar" />
 
     <!-- Container into which LocationButtonController injects the button at runtime -->
     <FrameLayout
