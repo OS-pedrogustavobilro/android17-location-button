@@ -356,7 +356,7 @@ class LocationButtonController private constructor(
     }
 
     /** [dp] is capped internally by the library at MAX_STROKE_WIDTH_DP (3 dp). */
-    fun setStrokeWidthDp(dp: Int): LocationButtonController {
+    fun setStrokeWidthDp(dp: Float): LocationButtonController {
         button.setStrokeWidth((dp * density).toInt())
         return this
     }

@@ -318,7 +318,7 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
         strokeWidthLabel.text = getString(R.string.label_stroke_width, 0)
         strokeWidthSeekBar.setOnSeekBarChangeListener(
             seekBarListener(strokeWidthLabel, R.string.label_stroke_width) { progress ->
-                controller.setStrokeWidthDp(progress)
+                controller.setStrokeWidthDp(progress.toFloat())
             }
         )
     }
