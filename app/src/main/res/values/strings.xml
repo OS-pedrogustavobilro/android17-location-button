@@ -24,7 +24,10 @@
     <string name="label_text_type">Text type</string>
     <string name="label_width_wrap">Width: WRAP_CONTENT</string>
     <string name="label_width_dp">Width: %d dp</string>
-    <string name="label_margin">Margin: %d dp</string>
+    <string name="label_margin_start">Start: %d dp</string>
+    <string name="label_margin_top">Top: %d dp</string>
+    <string name="label_margin_end">End: %d dp</string>
+    <string name="label_margin_bottom">Bottom: %d dp</string>
     <string name="label_corner_radius">Corner radius: %d dp</string>
     <string name="label_pressed_corner_radius">Pressed corner radius: %d dp</string>
     <string name="label_stroke_width">Stroke width: %d dp</string>

@@ -44,8 +44,14 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
     private lateinit var customCoordsRow: LinearLayout
     private lateinit var xCoordEdit: EditText
     private lateinit var yCoordEdit: EditText
-    private lateinit var marginLabel: TextView
-    private lateinit var marginSeekBar: SeekBar
+    private lateinit var marginStartLabel: TextView
+    private lateinit var marginStartSeekBar: SeekBar
+    private lateinit var marginTopLabel: TextView
+    private lateinit var marginTopSeekBar: SeekBar
+    private lateinit var marginEndLabel: TextView
+    private lateinit var marginEndSeekBar: SeekBar
+    private lateinit var marginBottomLabel: TextView
+    private lateinit var marginBottomSeekBar: SeekBar
 
     // Text & shape controls
     private lateinit var textTypeSpinner: Spinner
@@ -183,8 +189,14 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
         customCoordsRow          = findViewById(R.id.custom_coords_row)
         xCoordEdit               = findViewById(R.id.x_coord_edit)
         yCoordEdit               = findViewById(R.id.y_coord_edit)
-        marginLabel              = findViewById(R.id.margin_label)
-        marginSeekBar            = findViewById(R.id.margin_seekbar)
+        marginStartLabel         = findViewById(R.id.margin_start_label)
+        marginStartSeekBar       = findViewById(R.id.margin_start_seekbar)
+        marginTopLabel           = findViewById(R.id.margin_top_label)
+        marginTopSeekBar         = findViewById(R.id.margin_top_seekbar)
+        marginEndLabel           = findViewById(R.id.margin_end_label)
+        marginEndSeekBar         = findViewById(R.id.margin_end_seekbar)
+        marginBottomLabel        = findViewById(R.id.margin_bottom_label)
+        marginBottomSeekBar      = findViewById(R.id.margin_bottom_seekbar)
         textTypeSpinner          = findViewById(R.id.text_type_spinner)
         widthLabel               = findViewById(R.id.width_label)
         widthSeekBar             = findViewById(R.id.width_seekbar)
@@ -252,10 +264,10 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
                 val gravity = positionGravities[pos].second
                 val isCustom = gravity == GRAVITY_CUSTOM
                 customCoordsRow.visibility = if (isCustom) View.VISIBLE else View.GONE
-                marginSeekBar.isEnabled = !isCustom
+                setMarginSeekBarsEnabled(!isCustom)
                 if (!isCustom) {
                     controller.setGravityPosition(gravity)
-                    controller.setMarginDp(marginSeekBar.progress)
+                    applyCurrentMargins()
                 }
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
@@ -267,15 +279,38 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
             controller.setCustomPosition(x, y)
         }
 
-        marginLabel.text = getString(R.string.label_margin, 0)
-        marginSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+        initMarginSeekBar(marginStartLabel,  R.string.label_margin_start,  marginStartSeekBar)
+        initMarginSeekBar(marginTopLabel,    R.string.label_margin_top,    marginTopSeekBar)
+        initMarginSeekBar(marginEndLabel,    R.string.label_margin_end,    marginEndSeekBar)
+        initMarginSeekBar(marginBottomLabel, R.string.label_margin_bottom, marginBottomSeekBar)
+    }
+
+    private fun initMarginSeekBar(label: TextView, @StringRes labelRes: Int, seekBar: SeekBar) {
+        label.text = getString(labelRes, 0)
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
-                marginLabel.text = getString(R.string.label_margin, progress)
-                if (sb.isEnabled) controller.setMarginDp(progress)
+                label.text = getString(labelRes, progress)
+                if (sb.isEnabled) applyCurrentMargins()
             }
             override fun onStartTrackingTouch(sb: SeekBar) {}
             override fun onStopTrackingTouch(sb: SeekBar) {}
         })
+    }
+
+    private fun applyCurrentMargins() {
+        controller.setMarginDp(
+            marginStartSeekBar.progress,
+            marginTopSeekBar.progress,
+            marginEndSeekBar.progress,
+            marginBottomSeekBar.progress,
+        )
+    }
+
+    private fun setMarginSeekBarsEnabled(enabled: Boolean) {
+        marginStartSeekBar.isEnabled  = enabled
+        marginTopSeekBar.isEnabled    = enabled
+        marginEndSeekBar.isEnabled    = enabled
+        marginBottomSeekBar.isEnabled = enabled
     }
 
     // ── Text & shape controls ─────────────────────────────────────────────────

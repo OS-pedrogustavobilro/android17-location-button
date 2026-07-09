@@ -173,17 +173,59 @@
 
             </LinearLayout>
 
+            <!-- Margins applied to LayoutParams; disabled in Custom (px) mode -->
             <TextView
-                android:id="@+id/margin_label"
+                android:id="@+id/margin_start_label"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
-                tools:text="Margin: 0 dp" />
+                tools:text="Start: 0 dp" />
 
-            <!-- Margin applied to LayoutParams; disabled in Custom (px) mode -->
             <SeekBar
-                android:id="@+id/margin_seekbar"
+                android:id="@+id/margin_start_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="96" />
+
+            <TextView
+                android:id="@+id/margin_top_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                tools:text="Top: 0 dp" />
+
+            <SeekBar
+                android:id="@+id/margin_top_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="96" />
+
+            <TextView
+                android:id="@+id/margin_end_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                tools:text="End: 0 dp" />
+
+            <SeekBar
+                android:id="@+id/margin_end_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="96" />
+
+            <TextView
+                android:id="@+id/margin_bottom_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                tools:text="Bottom: 0 dp" />
+
+            <SeekBar
+                android:id="@+id/margin_bottom_seekbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:max="96" />

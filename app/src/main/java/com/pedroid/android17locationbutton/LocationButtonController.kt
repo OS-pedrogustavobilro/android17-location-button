@@ -299,7 +299,7 @@ class LocationButtonController private constructor(
     fun setGravityPosition(gravity: Int): LocationButtonController {
         updateParams {
             it.gravity = gravity
-            it.setMargins(0, 0, 0, 0)
+            it.marginStart = 0; it.topMargin = 0; it.marginEnd = 0; it.bottomMargin = 0
         }
         return this
     }
@@ -312,9 +312,15 @@ class LocationButtonController private constructor(
         return this
     }
 
-    fun setMarginDp(dp: Int): LocationButtonController {
-        val px = (dp * density).toInt()
-        updateParams { it.setMargins(px, px, px, px) }
+    fun setMarginDp(dp: Int): LocationButtonController =
+        setMarginDp(dp, dp, dp, dp)
+
+    fun setMarginDp(start: Int, top: Int, end: Int, bottom: Int): LocationButtonController {
+        val s = (start * density).toInt()
+        val t = (top * density).toInt()
+        val e = (end * density).toInt()
+        val b = (bottom * density).toInt()
+        updateParams { it.marginStart = s; it.topMargin = t; it.marginEnd = e; it.bottomMargin = b }
         return this
     }
 
