@@ -84,7 +84,6 @@ class LocationButtonController private constructor(
     // ── Internal state ────────────────────────────────────────────────────────
 
     private val context: Context = container.context
-    private val density: Float = context.resources.displayMetrics.density
 
     private val button: LocationButton = LocationButton(context).apply {
         id = View.generateViewId()
@@ -304,32 +303,19 @@ class LocationButtonController private constructor(
         return this
     }
 
-    fun setCustomPosition(xPx: Int, yPx: Int): LocationButtonController {
-        updateParams {
-            it.gravity = Gravity.TOP or Gravity.START
-            it.setMargins(xPx, yPx, 0, 0)
-        }
-        return this
-    }
+    fun setMargin(px: Int): LocationButtonController =
+        setMargin(px, px, px, px)
 
-    fun setMarginDp(dp: Int): LocationButtonController =
-        setMarginDp(dp, dp, dp, dp)
-
-    fun setMarginDp(start: Int, top: Int, end: Int, bottom: Int): LocationButtonController {
-        val s = (start * density).toInt()
-        val t = (top * density).toInt()
-        val e = (end * density).toInt()
-        val b = (bottom * density).toInt()
-        updateParams { it.marginStart = s; it.topMargin = t; it.marginEnd = e; it.bottomMargin = b }
+    fun setMargin(start: Int, top: Int, end: Int, bottom: Int): LocationButtonController {
+        updateParams { it.marginStart = start; it.topMargin = top; it.marginEnd = end; it.bottomMargin = bottom }
         return this
     }
 
     // ── Dimensions ────────────────────────────────────────────────────────────
 
-    fun setWidthDp(dp: Int): LocationButtonController {
+    fun setWidth(px: Int): LocationButtonController {
         updateParams {
-            it.width = if (dp == 0) FrameLayout.LayoutParams.WRAP_CONTENT
-                       else (dp * density).toInt()
+            it.width = if (px == 0) FrameLayout.LayoutParams.WRAP_CONTENT else px
         }
         return this
     }
@@ -341,13 +327,13 @@ class LocationButtonController private constructor(
         return this
     }
 
-    fun setCornerRadiusDp(dp: Float): LocationButtonController {
-        button.setCornerRadius(dp * density)
+    fun setCornerRadius(px: Float): LocationButtonController {
+        button.setCornerRadius(px)
         return this
     }
 
-    fun setPressedCornerRadiusDp(dp: Float): LocationButtonController {
-        button.setPressedCornerRadius(dp * density)
+    fun setPressedCornerRadius(px: Float): LocationButtonController {
+        button.setPressedCornerRadius(px)
         return this
     }
 
@@ -371,9 +357,9 @@ class LocationButtonController private constructor(
         return this
     }
 
-    /** [dp] is capped internally by the library at MAX_STROKE_WIDTH_DP (3 dp). */
-    fun setStrokeWidthDp(dp: Float): LocationButtonController {
-        button.setStrokeWidth((dp * density).toInt())
+    /** [px] is capped internally by the library at MAX_STROKE_WIDTH_DP (3 dp). */
+    fun setStrokeWidth(px: Float): LocationButtonController {
+        button.setStrokeWidth(px.toInt())
         return this
     }
 

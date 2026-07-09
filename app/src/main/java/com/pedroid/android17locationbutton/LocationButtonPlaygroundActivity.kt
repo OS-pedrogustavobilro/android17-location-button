@@ -276,7 +276,8 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
         findViewById<Button>(R.id.apply_position_button).setOnClickListener {
             val x = xCoordEdit.text.toString().toIntOrNull() ?: 0
             val y = yCoordEdit.text.toString().toIntOrNull() ?: 0
-            controller.setCustomPosition(x, y)
+            controller.setGravityPosition(Gravity.TOP or Gravity.START)
+            controller.setMargin(x, y, 0, 0)
         }
 
         initMarginSeekBar(marginStartLabel,  R.string.label_margin_start,  marginStartSeekBar)
@@ -298,11 +299,12 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
     }
 
     private fun applyCurrentMargins() {
-        controller.setMarginDp(
-            marginStartSeekBar.progress,
-            marginTopSeekBar.progress,
-            marginEndSeekBar.progress,
-            marginBottomSeekBar.progress,
+        val d = density
+        controller.setMargin(
+            (marginStartSeekBar.progress * d).toInt(),
+            (marginTopSeekBar.progress * d).toInt(),
+            (marginEndSeekBar.progress * d).toInt(),
+            (marginBottomSeekBar.progress * d).toInt(),
         )
     }
 
@@ -329,7 +331,7 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
             override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
                 widthLabel.text = if (progress == 0) getString(R.string.label_width_wrap)
                                   else getString(R.string.label_width_dp, progress)
-                controller.setWidthDp(progress)
+                controller.setWidth(if (progress == 0) 0 else (progress * density).toInt())
             }
             override fun onStartTrackingTouch(sb: SeekBar) {}
             override fun onStopTrackingTouch(sb: SeekBar) {}
@@ -338,21 +340,21 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
         cornerRadiusLabel.text = getString(R.string.label_corner_radius, 0)
         cornerRadiusSeekBar.setOnSeekBarChangeListener(
             seekBarListener(cornerRadiusLabel, R.string.label_corner_radius) { progress ->
-                controller.setCornerRadiusDp(progress.toFloat())
+                controller.setCornerRadius(progress * density)
             }
         )
 
         pressedCornerLabel.text = getString(R.string.label_pressed_corner_radius, 0)
         pressedCornerSeekBar.setOnSeekBarChangeListener(
             seekBarListener(pressedCornerLabel, R.string.label_pressed_corner_radius) { progress ->
-                controller.setPressedCornerRadiusDp(progress.toFloat())
+                controller.setPressedCornerRadius(progress * density)
             }
         )
 
         strokeWidthLabel.text = getString(R.string.label_stroke_width, 0)
         strokeWidthSeekBar.setOnSeekBarChangeListener(
             seekBarListener(strokeWidthLabel, R.string.label_stroke_width) { progress ->
-                controller.setStrokeWidthDp(progress.toFloat())
+                controller.setStrokeWidth(progress * density)
             }
         )
     }
@@ -412,6 +414,8 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
         super.onDestroy()
         controller.detach()
     }
+
+    private val density: Float get() = resources.displayMetrics.density
 
     companion object {
         private const val GRAVITY_CUSTOM = -1
