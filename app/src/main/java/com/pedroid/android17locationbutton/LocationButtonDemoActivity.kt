@@ -1,20 +1,22 @@
 package com.pedroid.android17locationbutton
 
-import android.location.Location
+import android.annotation.SuppressLint
+import android.location.LocationManager
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.locationbutton.LocationButton
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.appbar.MaterialToolbar
 
-class LocationButtonDemoActivity : AppCompatActivity(), LocationButtonController.Callback {
+class LocationButtonDemoActivity : AppCompatActivity() {
 
+    private lateinit var button: LocationButton
     private lateinit var statusText: TextView
     private lateinit var locationText: TextView
-    private lateinit var controller: LocationButtonController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,44 +34,38 @@ class LocationButtonDemoActivity : AppCompatActivity(), LocationButtonController
 
         statusText = findViewById(R.id.status_text)
         locationText = findViewById(R.id.location_text)
+        button = findViewById(R.id.location_button)
 
-        controller = LocationButtonController
-            .attach(findViewById(R.id.location_button_container))
-            .setCallback(this)
-            .also { it.fetchLocationOnGrant = true }
+        button.setOnPermissionResultListener { granted ->
+            statusText.text = if (granted) getString(R.string.status_granted)
+                              else getString(R.string.status_denied)
+            if (granted) fetchLastKnownLocation() else locationText.visibility = View.GONE
+        }
+        button.setOnErrorListener { e ->
+            statusText.text = getString(R.string.status_error, e.message ?: "Unknown error")
+            locationText.visibility = View.GONE
+        }
     }
 
-    // ── LocationButtonController.Callback ─────────────────────────────────────
-
-    override fun onPermissionResult(granted: Boolean) {
-        statusText.text = if (granted) getString(R.string.status_granted)
-                          else getString(R.string.status_denied)
-        if (!granted) locationText.visibility = View.GONE
-    }
-
-    override fun onLocation(location: Location?) {
+    @SuppressLint("MissingPermission")
+    private fun fetchLastKnownLocation() {
+        val lm = getSystemService(LocationManager::class.java)
+        val location = lm.getProviders(true)
+            .asSequence()
+            .mapNotNull { lm.getLastKnownLocation(it) }
+            .maxByOrNull { it.time }
         locationText.text = if (location != null) {
-            "Lat: %.6f\nLng: %.6f\n@ %s".format(location.latitude, location.longitude, location.formattedTime())
+            "Lat: %.6f\nLng: %.6f\n@ %s".format(
+                location.latitude, location.longitude, location.formattedTime()
+            )
         } else {
             getString(R.string.location_no_cache)
         }
         locationText.visibility = View.VISIBLE
     }
 
-    override fun onError(throwable: Throwable) {
-        statusText.text = getString(R.string.status_error, throwable.message ?: "Unknown error")
-        locationText.visibility = View.GONE
-    }
-
-    // ── Navigation ────────────────────────────────────────────────────────────
-
     override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        controller.detach()
     }
 }

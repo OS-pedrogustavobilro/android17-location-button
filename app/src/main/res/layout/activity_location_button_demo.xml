@@ -28,11 +28,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbar" />
 
-    <!-- Container into which LocationButtonController injects the button at runtime -->
-    <FrameLayout
-        android:id="@+id/location_button_container"
+    <androidx.core.locationbutton.LocationButton
+        android:id="@+id/location_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textColor="#FFFFFFFF"
+        app:backgroundColor="#FF6750A4"
+        app:cornerRadius="50dp"
+        app:iconTint="#FFFFFFFF"
+        app:locationButtonTextType="precise_location"
+        app:pressedCornerRadius="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -51,7 +56,7 @@
         android:textAppearance="?attr/textAppearanceBodyLarge"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/location_button_container" />
+        app:layout_constraintTop_toBottomOf="@id/location_button" />
 
     <TextView
         android:id="@+id/location_text"
