@@ -23,6 +23,8 @@ import com.google.android.material.appbar.MaterialToolbar
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.skydoves.colorpickerview.ColorPickerDialog
+import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener
 import kotlinx.coroutines.launch
 
 class LocationButtonPlaygroundActivity : AppCompatActivity() {
@@ -363,6 +365,41 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
 
     private fun setupColorControls() {
         findViewById<Button>(R.id.apply_colors_button).setOnClickListener { applyColors() }
+
+        bgColorPreview.setOnClickListener {
+            openColorPicker(bgColorEdit, bgColorPreview) { controller.setBackgroundColor(it) }
+        }
+        textColorPreview.setOnClickListener {
+            openColorPicker(textColorEdit, textColorPreview) { controller.setTextColor(it) }
+        }
+        iconTintPreview.setOnClickListener {
+            openColorPicker(iconTintEdit, iconTintPreview) { controller.setIconTint(it) }
+        }
+        strokeColorPreview.setOnClickListener {
+            openColorPicker(strokeColorEdit, strokeColorPreview) { controller.setStrokeColor(it) }
+        }
+    }
+
+    private fun openColorPicker(edit: EditText, preview: View, apply: (Int) -> Unit) {
+        val initialColor = runCatching {
+            Color.parseColor(edit.text.toString().trim())
+        }.getOrElse { Color.WHITE }
+
+        val builder = ColorPickerDialog.Builder(this)
+            .setTitle(getString(R.string.color_picker_title))
+            .setPositiveButton(getString(android.R.string.ok), ColorEnvelopeListener { envelope, _ ->
+                val color = envelope.color
+                preview.setBackgroundColor(color)
+                edit.setText("#${envelope.hexCode}")
+                edit.error = null
+                apply(color)
+            })
+            .setNegativeButton(getString(android.R.string.cancel)) { dialog, _ -> dialog.dismiss() }
+            .attachAlphaSlideBar(true)
+            .attachBrightnessSlideBar(true)
+            .setBottomSpace(12)
+        builder.colorPickerView.setInitialColor(initialColor)
+        builder.show()
     }
 
     private fun applyColors() {

@@ -450,10 +450,13 @@
 
                 <View
                     android:id="@+id/bg_color_preview"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:layout_marginEnd="8dp"
-                    android:background="?attr/colorOutlineVariant" />
+                    android:background="?attr/colorOutlineVariant"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground" />
 
                 <EditText
                     android:id="@+id/bg_color_edit"
@@ -484,10 +487,13 @@
 
                 <View
                     android:id="@+id/text_color_preview"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:layout_marginEnd="8dp"
-                    android:background="?attr/colorOutlineVariant" />
+                    android:background="?attr/colorOutlineVariant"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground" />
 
                 <EditText
                     android:id="@+id/text_color_edit"
@@ -518,10 +524,13 @@
 
                 <View
                     android:id="@+id/icon_tint_preview"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:layout_marginEnd="8dp"
-                    android:background="?attr/colorOutlineVariant" />
+                    android:background="?attr/colorOutlineVariant"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground" />
 
                 <EditText
                     android:id="@+id/icon_tint_edit"
@@ -552,10 +561,13 @@
 
                 <View
                     android:id="@+id/stroke_color_preview"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:layout_marginEnd="8dp"
-                    android:background="?attr/colorOutlineVariant" />
+                    android:background="?attr/colorOutlineVariant"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground" />
 
                 <EditText
                     android:id="@+id/stroke_color_edit"

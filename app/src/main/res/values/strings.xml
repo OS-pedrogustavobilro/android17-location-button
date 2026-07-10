@@ -41,6 +41,7 @@
     <string name="btn_apply_position">Apply</string>
     <string name="btn_apply_colors">Apply Colors</string>
     <string name="error_invalid_color">Invalid color format</string>
+    <string name="color_picker_title">Pick a Color</string>
     <string name="toast_location_granted">Location access granted (session)</string>
     <string name="toast_location_denied">Location access was not granted</string>
     <string name="toast_error">Error: %s</string>

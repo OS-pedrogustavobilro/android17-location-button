@@ -39,6 +39,7 @@ dependencies {
     implementation(libs.androidx.core.locationbutton)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.material)
+    implementation(libs.colorpickerview)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
