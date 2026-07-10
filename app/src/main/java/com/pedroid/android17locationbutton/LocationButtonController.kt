@@ -14,6 +14,7 @@ import androidx.core.location.LocationListenerCompat
 import androidx.core.location.LocationManagerCompat
 import androidx.core.location.LocationRequestCompat
 import androidx.core.locationbutton.LocationButton
+import androidx.core.view.setPadding
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -139,6 +140,7 @@ class LocationButtonController private constructor(
             _state = State.ERROR
             callback?.onError(e)
         }
+        button.setPadding((4 * context.resources.displayMetrics.density).toInt())
         container.addView(
             button,
             FrameLayout.LayoutParams(
