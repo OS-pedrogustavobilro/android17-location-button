@@ -77,7 +77,6 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
     private lateinit var strokeColorEdit: EditText
 
     private val locationStrategies = listOf(
-        "Last Known"       to LocationButtonController.LocationStrategy.LAST_KNOWN,
         "Current Location" to LocationButtonController.LocationStrategy.CURRENT,
         "Location Updates" to LocationButtonController.LocationStrategy.UPDATES,
     )

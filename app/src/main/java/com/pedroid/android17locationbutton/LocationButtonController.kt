@@ -45,12 +45,6 @@ class LocationButtonController private constructor(
      */
     enum class LocationStrategy {
         /**
-         * Reads the last cached fix from any enabled provider.
-         * Fast but may return a stale or null result.
-         */
-        LAST_KNOWN,
-
-        /**
          * Requests a single fresh fix via [LocationManagerCompat.getCurrentLocation].
          * Delivers null if no fix arrives before the system cancels the request.
          * A previous in-flight request is cancelled when a new button tap occurs.
@@ -106,7 +100,7 @@ class LocationButtonController private constructor(
     // ── Configuration ─────────────────────────────────────────────────────────
 
     /** Strategy used to resolve the location after the button grants permission. */
-    var locationStrategy: LocationStrategy = LocationStrategy.LAST_KNOWN
+    var locationStrategy: LocationStrategy = LocationStrategy.CURRENT
 
     /** Desired update interval for [LocationStrategy.UPDATES] mode (milliseconds). */
     var locationUpdateIntervalMs: Long = 5_000L
@@ -209,16 +203,9 @@ class LocationButtonController private constructor(
 
     private fun deliverLocation() {
         when (locationStrategy) {
-            LocationStrategy.LAST_KNOWN -> deliverLastKnown()
-            LocationStrategy.CURRENT    -> deliverCurrent()
-            LocationStrategy.UPDATES    -> startUpdates()
+            LocationStrategy.CURRENT -> deliverCurrent()
+            LocationStrategy.UPDATES -> startUpdates()
         }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun deliverLastKnown() {
-        val lm = context.getSystemService(LocationManager::class.java)
-        callback?.onLocation(getLastKnown(lm))
     }
 
     @SuppressLint("MissingPermission")
