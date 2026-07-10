@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.pedroid.android17locationbutton.controller"
+    namespace = "com.pedroid.android17locationbutton.core"
     compileSdk = 37
 
     defaultConfig {
@@ -17,9 +17,7 @@ android {
 }
 
 dependencies {
-    // Exposes core types (LocationButtonState, LocationStrategy, LocationButtonCallback,
-    // LocationFetcher) to consumers of this module.
-    api(project(":controller-core"))
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.core.locationbutton)
+    // SharedFlow appears in LocationFetcher's public API, so coroutines must be api.
+    api(libs.kotlinx.coroutines.android)
 }

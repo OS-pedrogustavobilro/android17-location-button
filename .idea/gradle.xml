@@ -10,6 +10,10 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/app-compose" />
+            <option value="$PROJECT_DIR$/controller" />
+            <option value="$PROJECT_DIR$/controller-compose" />
+            <option value="$PROJECT_DIR$/controller-core" />
           </set>
         </option>
       </GradleProjectSettings>

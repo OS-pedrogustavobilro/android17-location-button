@@ -23,6 +23,8 @@ import com.google.android.material.appbar.MaterialToolbar
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.pedroid.android17locationbutton.core.LocationButtonCallback
+import com.pedroid.android17locationbutton.core.LocationStrategy
 import com.skydoves.colorpickerview.ColorPickerDialog
 import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener
 import kotlinx.coroutines.launch
@@ -77,8 +79,8 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
     private lateinit var strokeColorEdit: EditText
 
     private val locationStrategies = listOf(
-        "Current Location" to LocationButtonController.LocationStrategy.CURRENT,
-        "Location Updates" to LocationButtonController.LocationStrategy.UPDATES,
+        "Current Location" to LocationStrategy.CURRENT,
+        "Location Updates" to LocationStrategy.UPDATES,
     )
 
     private val positionGravities = listOf(
@@ -132,12 +134,12 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
         controller = LocationButtonController
             .attach(findViewById(R.id.button_container))
             .also { it.fetchLocationOnGrant = true }
-            .setCallback(object : LocationButtonController.Callback {
+            .setCallback(object : LocationButtonCallback {
                 override fun onPermissionResult(granted: Boolean) {
                     val msgRes = if (granted) R.string.toast_location_granted
                                  else R.string.toast_location_denied
                     Toast.makeText(this@LocationButtonPlaygroundActivity, msgRes, Toast.LENGTH_SHORT).show()
-                    if (granted && controller.locationStrategy == LocationButtonController.LocationStrategy.UPDATES) {
+                    if (granted && controller.locationStrategy == LocationStrategy.UPDATES) {
                         stopUpdatesButton.visibility = View.VISIBLE
                     }
                 }
@@ -225,7 +227,7 @@ class LocationButtonPlaygroundActivity : AppCompatActivity() {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
                 val strategy = locationStrategies[pos].second
                 controller.locationStrategy = strategy
-                val isUpdates = strategy == LocationButtonController.LocationStrategy.UPDATES
+                val isUpdates = strategy == LocationStrategy.UPDATES
                 updatesOptionsRow.visibility = if (isUpdates) View.VISIBLE else View.GONE
                 if (!isUpdates) {
                     controller.stopLocationUpdates()

@@ -1,64 +1,33 @@
 package com.pedroid.android17locationbutton
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
-import android.location.LocationManager
-import android.os.CancellationSignal
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
 import androidx.annotation.ColorInt
-import androidx.core.content.ContextCompat
-import androidx.core.location.LocationListenerCompat
-import androidx.core.location.LocationManagerCompat
-import androidx.core.location.LocationRequestCompat
 import androidx.core.locationbutton.LocationButton
 import androidx.core.view.setPadding
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
+import com.pedroid.android17locationbutton.core.LocationButtonCallback
+import com.pedroid.android17locationbutton.core.LocationButtonState
+import com.pedroid.android17locationbutton.core.LocationFetcher
+import com.pedroid.android17locationbutton.core.LocationStrategy
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 
 /**
- * Manages a [LocationButton] injected at runtime into a [FrameLayout] container.
+ * Views implementation of the LocationButton controller.
  *
- * Responsibilities:
- *  - Creates and attaches the [LocationButton] programmatically (no XML required)
- *  - Owns permission-result and error wiring
- *  - Supports three [LocationStrategy] modes for resolving the location after a button tap
- *  - Tracks a [State] and exposes [show] / [hide] / [reset] controls
- *  - Provides dp-based fluent setters for every public [LocationButton] API
+ * Manages a [LocationButton] injected at runtime into a [FrameLayout] container.
+ * Location fetching is delegated to [LocationFetcher] from the `controller-core` module,
+ * which is shared with the Compose implementation.
+ *
+ * For Compose apps, see `controller-compose` and `LocationButtonStateHolder`.
  *
  * Obtain an instance via [attach].
  */
 class LocationButtonController private constructor(
     private val container: FrameLayout,
 ) {
-
-    // ── Public API types ──────────────────────────────────────────────────────
-
-    enum class State { IDLE, GRANTED, DENIED, ERROR }
-
-    /**
-     * Determines how the controller resolves the device location once the
-     * [LocationButton] grants permission.
-     */
-    enum class LocationStrategy {
-        /**
-         * Requests a single fresh fix via [LocationManagerCompat.getCurrentLocation].
-         * Delivers null if no fix arrives before the system cancels the request.
-         * A previous in-flight request is cancelled when a new button tap occurs.
-         */
-        CURRENT,
-
-        /**
-         * Starts continuous updates via [LocationManagerCompat.requestLocationUpdates].
-         * Each update fires [Callback.onLocation] **and** emits to [locationUpdatesFlow].
-         * Call [stopLocationUpdates] to cancel.
-         */
-        UPDATES,
-    }
 
     /** Controls which label text the [LocationButton] displays. */
     enum class TextType(internal val constant: Int) {
@@ -70,44 +39,28 @@ class LocationButtonController private constructor(
         NEAR_YOUR_PRECISE_LOCATION(LocationButton.TEXT_TYPE_NEAR_YOUR_PRECISE_LOCATION),
     }
 
-    interface Callback {
-        fun onPermissionResult(granted: Boolean)
-        fun onLocation(location: Location?) {}
-        fun onError(throwable: Throwable) {}
-    }
-
-    // ── Internal state ────────────────────────────────────────────────────────
-
     private val context: Context = container.context
-
     private val button: LocationButton = LocationButton(context).apply {
         id = View.generateViewId()
     }
+    private val fetcher = LocationFetcher(context)
 
-    private var _state: State = State.IDLE
-    private var callback: Callback? = null
-
-    // Active request handles
-    private var locationListener: LocationListenerCompat? = null
-    private var cancellationSignal: CancellationSignal? = null
-
-    // Flow for UPDATES mode — replay=0 so late collectors don't get stale data
-    private val _locationUpdatesFlow = MutableSharedFlow<Location>(
-        replay = 0,
-        extraBufferCapacity = 8,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
-    )
+    private var _state: LocationButtonState = LocationButtonState.IDLE
+    private var callback: LocationButtonCallback? = null
 
     // ── Configuration ─────────────────────────────────────────────────────────
 
-    /** Strategy used to resolve the location after the button grants permission. */
-    var locationStrategy: LocationStrategy = LocationStrategy.CURRENT
+    var locationStrategy: LocationStrategy
+        get() = fetcher.strategy
+        set(value) { fetcher.strategy = value }
 
-    /** Desired update interval for [LocationStrategy.UPDATES] mode (milliseconds). */
-    var locationUpdateIntervalMs: Long = 5_000L
+    var locationUpdateIntervalMs: Long
+        get() = fetcher.updateIntervalMs
+        set(value) { fetcher.updateIntervalMs = value }
 
-    /** Minimum displacement (metres) between updates in [LocationStrategy.UPDATES] mode. */
-    var locationUpdateMinDistanceM: Float = 0f
+    var locationUpdateMinDistanceM: Float
+        get() = fetcher.updateMinDistanceM
+        set(value) { fetcher.updateMinDistanceM = value }
 
     /** When true, hides the button automatically after permission is granted. */
     var autoHideOnGranted: Boolean = false
@@ -117,27 +70,28 @@ class LocationButtonController private constructor(
 
     // ── Read-only state ───────────────────────────────────────────────────────
 
-    val state: State get() = _state
+    val state: LocationButtonState get() = _state
     val isVisible: Boolean get() = button.visibility == View.VISIBLE
 
     /**
      * Emits every location update received in [LocationStrategy.UPDATES] mode.
-     * Callers who prefer coroutines can collect this instead of (or alongside)
-     * [Callback.onLocation].
+     * Collect this as an alternative to (or alongside) [LocationButtonCallback.onLocation].
      */
-    val locationUpdatesFlow: SharedFlow<Location> = _locationUpdatesFlow.asSharedFlow()
+    val locationUpdatesFlow: SharedFlow<Location> = fetcher.locationUpdatesFlow
 
     // ── Initialisation ────────────────────────────────────────────────────────
 
     init {
+        fetcher.onLocation = { location -> callback?.onLocation(location) }
+
         button.setOnPermissionResultListener { granted ->
-            _state = if (granted) State.GRANTED else State.DENIED
+            _state = if (granted) LocationButtonState.GRANTED else LocationButtonState.DENIED
             if (granted && autoHideOnGranted) hide()
             callback?.onPermissionResult(granted)
-            if (granted && fetchLocationOnGrant) deliverLocation()
+            if (granted && fetchLocationOnGrant) fetcher.deliver()
         }
         button.setOnErrorListener { e ->
-            _state = State.ERROR
+            _state = LocationButtonState.ERROR
             callback?.onError(e)
         }
         button.setPadding((4 * context.resources.displayMetrics.density).toInt())
@@ -160,13 +114,13 @@ class LocationButtonController private constructor(
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-    fun setCallback(callback: Callback?): LocationButtonController {
+    fun setCallback(callback: LocationButtonCallback?): LocationButtonController {
         this.callback = callback
         return this
     }
 
     fun detach() {
-        stopLocationUpdates()
+        fetcher.stop()
         container.removeView(button)
         callback = null
     }
@@ -184,102 +138,15 @@ class LocationButtonController private constructor(
     }
 
     fun reset(): LocationButtonController {
-        _state = State.IDLE
+        _state = LocationButtonState.IDLE
         return show()
     }
 
-    // ── Location delivery ─────────────────────────────────────────────────────
+    // ── Location ──────────────────────────────────────────────────────────────
 
-    /**
-     * Cancels any in-flight [LocationStrategy.CURRENT] request or active
-     * [LocationStrategy.UPDATES] stream. Safe to call at any time.
-     */
-    fun stopLocationUpdates() {
-        cancellationSignal?.cancel()
-        cancellationSignal = null
-        locationListener?.let {
-            context.getSystemService(LocationManager::class.java).removeUpdates(it)
-        }
-        locationListener = null
-    }
-
-    private fun deliverLocation() {
-        when (locationStrategy) {
-            LocationStrategy.CURRENT -> deliverCurrent()
-            LocationStrategy.UPDATES -> startUpdates()
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun deliverCurrent() {
-        val lm = context.getSystemService(LocationManager::class.java)
-        val provider = getBestProvider(lm) ?: run {
-            // No active provider — fall back to whatever is cached
-            callback?.onLocation(getLastKnown(lm))
-            return
-        }
-        cancellationSignal?.cancel()
-        cancellationSignal = CancellationSignal()
-        LocationManagerCompat.getCurrentLocation(
-            lm,
-            provider,
-            cancellationSignal,
-            ContextCompat.getMainExecutor(context),
-        ) { freshLocation ->
-            // getCurrentLocation delivers null when no fix arrives before the internal timeout.
-            // Fall back to the most-recent cached fix so the caller always gets something.
-            callback?.onLocation(freshLocation ?: getLastKnown(lm))
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun startUpdates() {
-        stopLocationUpdates()
-        val lm = context.getSystemService(LocationManager::class.java)
-        val provider = getBestProvider(lm) ?: return
-
-        // Deliver the last cached fix immediately so the caller has something to show
-        // while waiting for the first real update to arrive.
-        getLastKnown(lm)?.let { cached ->
-            _locationUpdatesFlow.tryEmit(cached)
-            callback?.onLocation(cached)
-        }
-
-        val request = LocationRequestCompat.Builder(locationUpdateIntervalMs)
-            .setMinUpdateDistanceMeters(locationUpdateMinDistanceM)
-            .build()
-        val listener = LocationListenerCompat { location ->
-            _locationUpdatesFlow.tryEmit(location)
-            callback?.onLocation(location)
-        }
-        LocationManagerCompat.requestLocationUpdates(
-            lm,
-            provider,
-            request,
-            ContextCompat.getMainExecutor(context),
-            listener,
-        )
-        locationListener = listener
-    }
-
-    /**
-     * Returns the most-recently cached location across all currently active providers,
-     * or null if no fix has ever been recorded.
-     */
-    @SuppressLint("MissingPermission")
-    private fun getLastKnown(lm: LocationManager): Location? =
-        lm.getProviders(true)
-            .asSequence()
-            .mapNotNull { lm.getLastKnownLocation(it) }
-            .maxByOrNull { it.time }
-
-    private fun getBestProvider(lm: LocationManager): String? {
-        val active = lm.getProviders(true)
-        return when {
-            LocationManager.GPS_PROVIDER in active     -> LocationManager.GPS_PROVIDER
-            LocationManager.NETWORK_PROVIDER in active -> LocationManager.NETWORK_PROVIDER
-            else -> active.firstOrNull()
-        }
+    fun stopLocationUpdates(): LocationButtonController {
+        fetcher.stop()
+        return this
     }
 
     // ── Position ──────────────────────────────────────────────────────────────
@@ -292,8 +159,7 @@ class LocationButtonController private constructor(
         return this
     }
 
-    fun setMargin(px: Int): LocationButtonController =
-        setMargin(px, px, px, px)
+    fun setMargin(px: Int): LocationButtonController = setMargin(px, px, px, px)
 
     fun setMargin(start: Int, top: Int, end: Int, bottom: Int): LocationButtonController {
         updateParams { it.marginStart = start; it.topMargin = top; it.marginEnd = end; it.bottomMargin = bottom }
@@ -303,9 +169,7 @@ class LocationButtonController private constructor(
     // ── Dimensions ────────────────────────────────────────────────────────────
 
     fun setWidth(px: Int): LocationButtonController {
-        updateParams {
-            it.width = if (px == 0) FrameLayout.LayoutParams.WRAP_CONTENT else px
-        }
+        updateParams { it.width = if (px == 0) FrameLayout.LayoutParams.WRAP_CONTENT else px }
         return this
     }
 

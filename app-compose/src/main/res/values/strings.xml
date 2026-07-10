@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Location Button (Compose)</string>
+    <string name="demo_title">Demo (Compose)</string>
+    <string name="playground_title">Playground (Compose)</string>
+    <string name="open_demo">Demo</string>
+    <string name="open_playground">Playground</string>
+    <string name="toast_location_granted">Location permission granted</string>
+    <string name="toast_location_denied">Location permission denied</string>
+    <string name="toast_error">Error: %1$s</string>
+    <string name="location_no_cache">No cached location available</string>
+</resources>
