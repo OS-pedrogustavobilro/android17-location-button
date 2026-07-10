@@ -24,4 +24,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Android17 Location Button"
 include(":app")
+include(":controller")
  
